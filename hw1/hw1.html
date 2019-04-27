@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>HW1</title>
+  <style type="text/css">
+  /*<![CDATA[*/
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  /*]]>*/
+  </style>
+  <script src=
+  "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS_CHTML-full"
+  type="text/javascript">
+  </script><!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+  <header id="title-block-header">
+    <h1 class="title">HW1</h1>
+  </header>
+  <pre class="{r}"><code>library(rethinking)
+data(homeworkch3)</code></pre>
+  <h1 id="m13">2M1(3)</h1>
+  <p><span class="math display">\[ p = \frac{W}{W+L} \]</span></p>
+  <pre class="{r}"><code># define grid
+p_grid &lt;- seq( from=0 , to=1 , length.out=20 )
+# define prior
+prior &lt;- rep( 1 , 20 )
+# compute likelihood at each value in grid
+likelihood &lt;- dbinom( 5 , size=7 , prob=p_grid )
+# compute product of likelihood and prior
+unstd.posterior &lt;- likelihood * prior
+# standardize the posterior, so it sums to 1
+posterior &lt;- unstd.posterior / sum(unstd.posterior)
+plot( p_grid , posterior , type="b" ,
+xlab="probability of water" , ylab="posterior probability" )</code></pre>
+  <h1 id="m23">2M2(3)</h1>
+  <pre class="{r}">
+  <code>p_grid &lt;- seq( from=0 , to=1 , length.out=20 )
+# define prior
+prior &lt;- as.integer(p_grid &gt; 0.5)
+# compute likelihood at each value in grid
+likelihood &lt;- dbinom( 5 , size=7 , prob=p_grid )
+# compute product of likelihood and prior
+unstd.posterior &lt;- likelihood * prior
+# standardize the posterior, so it sums to 1
+posterior &lt;- unstd.posterior / sum(unstd.posterior)
+plot( p_grid , posterior , type="b" ,
+xlab="probability of water" , ylab="posterior probability" )</code></pre>
+  <h1 id="h5">3H5</h1>
+  <blockquote>
+    <p>The model assumes that sex of first and second births are
+    independent. To check this assump- tion, focus now on second
+    births that followed female first borns. Compare 10,000
+    simulated counts of boys to only those second births that
+    followed girls. To do this correctly, you need to count the
+    number of first borns who were girls and simulate that many
+    births, 10,000 times. Compare the counts of boys in your
+    simulations to the actual observed count of boys following
+    girls. How does the model look in this light? Any guesses what
+    is going on in these data?</p>
+  </blockquote>
+  <pre class="{r}"><code>boys_after_girls &lt;- birth2[birth1 == 0]
+
+# define grid
+p_grid &lt;- seq(from = 0, to = 1, length.out = 1000)
+# define prior
+prior &lt;- rep(x = 1, 1000)
+# compute likelihood at each value in grid
+likelihood1 &lt;- dbinom(x = sum(boys_after_girls), size = length(boys_after_girls), prob = p_grid)
+likelihood2 &lt;- dbinom(x = sum(c(birth1, birth2)), size = length(c(birth1, birth2)), prob = p_grid)
+# compute product of likelihood and prior
+unstd.posterior1 &lt;- likelihood1 * prior
+unstd.posterior2 &lt;- likelihood2 * prior
+# standardize the posterior, so it sums to 1
+posterior1 &lt;- unstd.posterior1 / sum(unstd.posterior1)
+posterior2 &lt;- unstd.posterior2 / sum(unstd.posterior2)
+samples1 &lt;- sample(x = p_grid, size = 10000, prob = posterior1, replace = TRUE)
+samples2 &lt;- sample(x = p_grid, size = 10000, prob = posterior2, replace = TRUE)
+posterior1 &lt;- rbinom(n = 10000, size = length(boys_after_girls), prob = samples1)
+posterior2 &lt;- rbinom(n = 10000, size = length(boys_after_girls), prob = samples2)
+
+hist(posterior1, col=rgb(0,0,1,1/4))
+hist(posterior2, add=T, col=rgb(1,0,1,1/4))
+abline(v = sum(boys_after_girls))</code></pre>
+</body>
+</html>

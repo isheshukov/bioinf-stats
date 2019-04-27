@@ -1,0 +1,71 @@
+---
+title: "HW4"
+author: "Ilia Sheshukov"
+date: "April 13, 2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+Выполнить задания: 10M3-10M5 соответственно (3 варианта)
+Выполнить задания (рассказать суть задачи, рассказать подход, показать результаты):  10H1, 10H3 (a)-(b), 10H4 (a)-(b) (игнорировать пункты про WAIC) соответственно соответственно (3 варианта)
+
+# 10M5
+What would it imply to use a logit link for the mean of a Poisson generalized linear model? -- То, что среднее будет лежать между 0 и 1.
+
+# 10H4
+The data contained in data(salamanders) are counts of salamanders (Plethodon elongatus)
+from 47 different 49-m 2 plots in northern California. 166 The column SALAMAN is the count in each
+plot, and the columns PCTCOVER and FORESTAGE are percent of ground cover and age of trees in the
+plot, respectively. You will model SALAMAN as a Poisson variable.
+
+```{r}
+library(rethinking)
+data("salamanders")
+```
+## a
+Model the relationship between density and percent cover, using a log-link.
+
+```{r}
+f <- alist(
+  SALAMAN ~ dpois(lambda),
+  log(lambda) <- alpha + beta*PCTCOVER,
+  alpha ~ dnorm(0, 1),
+  beta ~ dnorm(0, 1)
+)
+
+map_ <- map(f, data = salamanders)
+stan_ <- map2stan(f, data = salamanders, warmup = 1e4, iter = 1e4)
+```
+```{r}
+X <- seq(from=0,to=100,length.out=30)
+Y <- sim(stan_, data = list(PCTCOVER = X))
+Y_mean <- apply(X = counts, MARGIN = 2, FUN = mean)
+Y_PI <- apply(X = counts, MARGIN = 2, FUN = PI)
+
+plot(SALAMAN ~ PCTCOVER, data = salamanders)
+lines(X, Y_mean)
+shade(Y_PI, X)
+```
+## b
+Can you improve the model by using the other predictor, FORESTAGE?
+```{r}
+f <- alist(
+  SALAMAN ~ dpois(lambda),
+  log(lambda) <- alpha + beta*FORESTAGE,
+  alpha ~ dnorm(0, 1),
+  beta ~ dnorm(0, 1)
+)
+
+map_ <- map(f, data = salamanders)
+stan_ <- map2stan(f, data = salamanders, warmup = 1e4, iter = 1e4, chains = 4)
+
+X <- seq(from=0,to=700,length.out=30)
+Y <- sim(stan_, data = list(FORESTAGE = X))
+Y_mean <- apply(X = counts, MARGIN = 2, FUN = mean)
+Y_PI <- apply(X = counts, MARGIN = 2, FUN = PI)
+
+plot(SALAMAN ~ FORESTAGE, data = salamanders)
+lines(X, Y_mean)
+shade(Y_PI, X)
+```

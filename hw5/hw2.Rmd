@@ -1,0 +1,92 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+* 4M4
+A sample of students is measured for height each year for 3 years. After the third year, you want
+to fit a linear regression predicting height using year as a predictor. Write down the mathematical
+model definition for this regression, using any variable names and priors you choose. Be prepared to
+defend your choice of priors.
+
+```{r}
+model <- map(
+  alist(
+    height ~ dnorm(mean = mu, sd = sigma),
+    mu <- alpha + beta*year,
+    alpha ~ dnorm(mean = 170, sd = 100),
+    sigma ~ dunif(min = 0, max = 50),
+    beta ~ dnorm(mean = 0, sd = 10)
+  ),
+  data = d
+)
+```
+* 4M5
+Now suppose I tell you that the average height in the first year was 120 cm and that every
+student got taller each year. Does this information lead you to change your choice of priors? How?
+
+Можно 1. сместить \mu к 120 см и сделать так, чтобы beta было больше 0.
+
+* 4M6
+Now suppose I tell you that the variance among heights for students of the same age is never
+more than 64cm. How does this lead you to revise your priors?
+
+Нужно выбрать распределение sigma которое будет обрываться на отметке 64 см.
+
+* 4H3
+Suppose a colleague of yours, who works on allometry, glances at the practice problems just
+above. Your colleague exclaims, “That’s silly. Everyone knows that it’s only the logarithm of body
+weight that scales with height!” Let’s take your colleague’s advice and see what happens.
+
+** a
+Model the relationship between height (cm) and the natural logarithm of weight (log-kg). Use
+the entire Howell1 data frame, all 544 rows, adults and non-adults. Fit this model, using quadratic
+approximation:
+h i ∼ Normal(μ i , σ)
+μ i = α + β log(w i )
+α ∼ Normal(178, 100)
+β ∼ Normal(0, 100)
+σ ∼ Uniform(0, 50)
+where h i is the height of individual i and w i is the weight (in kg) of individual i. The function for
+computing a natural log in R is just log . Can you interpret the resulting estimates?
+
+```{r}
+data(Howell1)
+d <- Howell1
+
+
+model <- map(
+  alist(
+    height ~ dnorm(mean = mu, sd = sigma),
+    mu <- alpha + beta*log(weight),
+    alpha ~ dnorm(mean = 178, sd = 100),
+    beta ~ dnorm(mean = 0, sd = 100),
+    sigma ~ dunif(min = 0, max = 50)
+  ),
+  data = d
+)
+
+precis(model)
+```
+** b
+Begin with this plot:
+```
+plot( height ~ weight , data=Howell1 ,
+col=col.alpha(rangi2,0.4) )
+```
+Then use samples from the quadratic approximate posterior of the model in (a) to superimpose on
+the plot: (1) the predicted mean height as a function of weight, (2) the 97% HPDI for the mean, and
+(3) the 97% HPDI for predicted heights.
+
+```{r}
+library(MASS)
+
+weight.seq <- seq(from = 1, to = 100, length.out = 100)
+samples <- data.frame( mvrnorm(n = 1000, mu = coef(model), Sigma = vcov(model)) )
+mu.link <- function(weight) samples$alpha + samples$beta * log(weight)
+mu <- sapply(X = weight.seq, FUN = mu.link)
+mu.mean <- apply(X = mu, MARGIN = 2, FUN = mean)
+
+plot( height ~ weight, data=Howell1, col=col.alpha(rangi2,0.4) )
+lines(x = weight.seq, y = mu.mean)
+```

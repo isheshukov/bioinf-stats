@@ -1,0 +1,79 @@
+---
+title: "HW1"
+output: html_notebook
+---
+
+```{r}
+library(rethinking)
+data(homeworkch3)
+```
+
+# 2M1(3)
+
+$$ p = \frac{W}{W+L} $$
+```{r}
+# define grid
+p_grid <- seq( from=0 , to=1 , length.out=20 )
+# define prior
+prior <- rep( 1 , 20 )
+# compute likelihood at each value in grid
+likelihood <- dbinom( 5 , size=7 , prob=p_grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+plot( p_grid , posterior , type="b" ,
+xlab="probability of water" , ylab="posterior probability" )
+```
+
+# 2M2(3)
+
+```{r}
+p_grid <- seq( from=0 , to=1 , length.out=20 )
+# define prior
+prior <- as.integer(p_grid > 0.5)
+# compute likelihood at each value in grid
+likelihood <- dbinom( 5 , size=7 , prob=p_grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+plot( p_grid , posterior , type="b" ,
+xlab="probability of water" , ylab="posterior probability" )
+```
+
+# 3H5
+
+> The model assumes that sex of first and second births are independent. To check this assump-
+tion, focus now on second births that followed female first borns. Compare 10,000 simulated counts
+of boys to only those second births that followed girls. To do this correctly, you need to count the
+number of first borns who were girls and simulate that many births, 10,000 times. Compare the
+counts of boys in your simulations to the actual observed count of boys following girls. How does the
+model look in this light? Any guesses what is going on in these data?
+
+
+``` {r}
+boys_after_girls <- birth2[birth1 == 0]
+
+# define grid
+p_grid <- seq(from = 0, to = 1, length.out = 1000)
+# define prior
+prior <- rep(x = 1, 1000)
+# compute likelihood at each value in grid
+likelihood1 <- dbinom(x = sum(boys_after_girls), size = length(boys_after_girls), prob = p_grid)
+likelihood2 <- dbinom(x = sum(c(birth1, birth2)), size = length(c(birth1, birth2)), prob = p_grid)
+# compute product of likelihood and prior
+unstd.posterior1 <- likelihood1 * prior
+unstd.posterior2 <- likelihood2 * prior
+# standardize the posterior, so it sums to 1
+posterior1 <- unstd.posterior1 / sum(unstd.posterior1)
+posterior2 <- unstd.posterior2 / sum(unstd.posterior2)
+samples1 <- sample(x = p_grid, size = 10000, prob = posterior1, replace = TRUE)
+samples2 <- sample(x = p_grid, size = 10000, prob = posterior2, replace = TRUE)
+posterior1 <- rbinom(n = 10000, size = length(boys_after_girls), prob = samples1)
+posterior2 <- rbinom(n = 10000, size = length(boys_after_girls), prob = samples2)
+
+hist(posterior1, col=rgb(0,0,1,1/4))
+hist(posterior2, add=T, col=rgb(1,0,1,1/4))
+abline(v = sum(boys_after_girls))
+```
